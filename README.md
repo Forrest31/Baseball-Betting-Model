@@ -18,16 +18,16 @@ The data used for this comes from www.baseball-reference.com and www.retrosheet.
 
 ### Data Cleaning 
 Data cleaning was require to created consistency for both the dependent and indpendent variables. Specific efforts included:
--Creating consistent team names 
--Creating consistent results
--Removing incomplete/unfinished games (NA values)
+1. Creating consistent team names 
+2. Creating consistent results
+3. Removing incomplete/unfinished games (NA values)
 
 ### Feature Engineering
 The goal for this project was to create a single observation for each game. A significant feature engineering effort was required to create season-to-date and recent (defined as last 5 games based off performance testing) for two key statistics with predictive power:
-*Pythagorean record
+1. Pythagorean record
 Pythagorean record is a well-understood metric for determining what a team's record "should be" based on the numbers of runs scored and allowed. To create this metric, I added up each team's runs scored and allowed for every game prior to the one being played in that season as well as the 5 games. All four inputs (home and visitor runs scored and allowed) as well as the recent and season to date Pythagorean records were independent variables in the model. 
 
-*Log 5
+2. Log 5
 Log 5 is the probability that a team with a certain winning percentage will defeat a team with a particular winning percentage. To calculate this, I added up each team's wins for every game prior to the one being played in that season as well as the 5 games and divided it by the total number of games played to create winning percentages. All six inputs (home and visitor wins, losses, and winning percentages) as well as the recent and season to date Log 5 for the home team were independent variables in the model. 
 
 ### Data Leakage
@@ -42,9 +42,37 @@ As noted earlier, the model was trained on 50,000 games and validated on 5,000, 
 ### Performance 
 When the model is applied to each game, the overall accuracy is 59%. However, when used in a betting context, one does not have to place a bet on every game. The graph below shows the model's accuracy (y-axis) as the proability threhsold for placing a bet increases (x-axis). The line on the secondary axis shows how often the user can expect to have games have a particular threhsold.  
 
+![Picture1](https://user-images.githubusercontent.com/73828790/225315425-bd40c180-ee44-4a3b-a216-f7dfdfbcd4fc.png)
 
+The accuracy steadily increases as the threshold for predicting a home team win increases.  For example, if a 66% probability is present for either team, accuracy increases by 13 percent.  However, this level of confidence only appears in 17 percent of predictions. 
 
-The accuracy steadily increases as the threshold for predicting a home team win increases.  For example, if a 66% probability is present for either team, accuracy increases by 13 percent.  However, this level of confidence only appears in 17 percent of predictions. I’ve also included a SHAP analysis to show which inputs play the biggest role in the prediction. 
+### Variable Importance
 
-The deployment file first ingests the most recent data and cleans it followed by performing the necessary feature engineering to ensure the data’s format exactly matches what the model was trained on.  To identify where any potential value lies, the user will need to manually input the home and away teams as well as the odds for each team to win. The output will be a table with each game and, the model’s probability of each team winning, the implied probability from the odds, as well as the expected value of each pick. 
+To quantify the importance of each input, I calculated their Shapley Additive Explanation (SHAP) value. Ive also included a SHAP analysis to show which inputs play the biggest role in the prediction. Very simply, the features with the largest value are the most important.
+
+<img width="525" alt="000010" src="https://user-images.githubusercontent.com/73828790/225316842-aa66c900-06ca-4ebb-8ba4-ae8b09139fd3.png">
+
+In addition to importance, the above plot shows the effect of high and low values of the feature and noted by the color. For example, high values of losses in the last 5 games (RollingOppLosses) produce a high SHAP value suggesting it is largely responsible for the prediction.
+
+### Deployment
+To deploy the model, the user needs to execute 3 steps: 
+1. Ingest the most recent game data
+2. Input the visiting and home teams
+3. Input each team's odds (American) of winning
+4. Run remaining code
+
+#### Ingest data
+To execute this step, the user must simply run the code already written.  All of the required cleaning and feature engineering to ensure the data’s format exactly matches what the model was trained on is included.    
+
+#### Input Teams
+All visiting teams should be typed into the opp vector using the team's abbreviation used by Baseball-Reference.com found [here:](https://www.baseball-reference.com/about/team_IDs.shtml). The home team's abbreviation should be typed into the team vector.  All abbrevieations need quotation marks.   
+
+<img width="981" alt="Capture" src="https://user-images.githubusercontent.com/73828790/225322227-f0b76b00-742b-4111-b97c-58c76df67726.PNG">
+
+#### Input Odds
+To determine where the value lies, the user needs to input the American odds for each team to win in the respective odds vector.  The order is critically importat. The first number in the Opp_odds vector should correspond to the first team in the opp vector. That team's opponent that day should be the first team in the Tm vector and its odds to win should be the first value in the Tm_odds vector.  
+
+#### Run reamining code
+The output of the code is a csv file containing the model's prediction with the necessary contextual information to determine the "edge" associated with each bet.  ![image](https://user-images.githubusercontent.com/73828790/225327134-191e3e81-22fd-4c2a-a4af-3f1e8d6ac830.png)
+
 
