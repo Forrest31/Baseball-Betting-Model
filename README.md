@@ -23,7 +23,7 @@ Data cleaning was require to created consistency for both the dependent and indp
 3. Removing incomplete/unfinished games (NA values)
 
 ### Feature Engineering
-The goal for this project was to create a single observation for each game. A significant feature engineering effort was required to create season-to-date and recent (defined as last 5 games based off performance testing) for two key statistics with predictive power:
+The goal for this project was to create a single observation for each game. A significant feature engineering effort was required to create season-to-date and recent (defined as last 5 games based off performance testing) for two key team-level statistics with predictive power:
 1. Pythagorean record
 Pythagorean record is a well-understood metric for determining what a team's record "should be" based on the numbers of runs scored and allowed. To create this metric, I added up each team's runs scored and allowed for every game prior to the one being played in that season as well as the 5 games. All four inputs (home and visitor runs scored and allowed) as well as the recent and season to date Pythagorean records were independent variables in the model. 
 
