@@ -11,7 +11,7 @@ The repository contains two R markdown files:
 The XG Boost model is trained and validated on over 50,000 and 5,000, respectively, MLB games. As a logit model, its output is the probability of the home team winning.
 
 #### 2. Deploying the Model for Upcoming Games (Daily Run for Baseball Picks)
-This file allows the user to deploy the model against the day’s games by after entering the teams playing one another and the posted odds for each team winning. The output is a csv file which shows the “edge” of each pick as defined by the implied probability of the given odds to win minus the probability of winning provided by the model.  
+This file allows the user to deploy the model against the day’s games after entering the teams playing one another and the posted odds for each team winning. The output is a csv file which shows the “edge” of each pick as defined by the implied probability of the given odds to win minus the probability of winning provided by the model.  
 
 ### Data Collection
 The data used for this comes from www.baseball-reference.com and www.retrosheet.com via the baseballr and retrosheet packages in R. 
