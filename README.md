@@ -24,41 +24,46 @@ Data cleaning was require to created consistency for both the dependent and indp
 
 ### Feature Engineering
 The goal for this project was to create a single observation for each game. A significant feature engineering effort was required to create season-to-date and recent (defined as last 5 games based off performance testing) for two key team-level statistics with predictive power:
-1. Pythagorean record
-Pythagorean record is a well-understood metric for determining what a team's record "should be" based on the numbers of runs scored and allowed. To create this metric, I added up each team's runs scored and allowed for every game prior to the one being played in that season as well as the 5 games. All four inputs (home and visitor runs scored and allowed) as well as the recent and season to date Pythagorean records were independent variables in the model. 
 
-2. Log 5
-Log 5 is the probability that a team with a certain winning percentage will defeat a team with a particular winning percentage. To calculate this, I added up each team's wins for every game prior to the one being played in that season as well as the 5 games and divided it by the total number of games played to create winning percentages. All six inputs (home and visitor wins, losses, and winning percentages) as well as the recent and season to date Log 5 for the home team were independent variables in the model. 
+***Pythagorean record***:  
+Pythagorean record is a well-understood metric for determining what a team's record "should be" based on the numbers of runs scored and allowed. This metric uses the following formula: $$Runs^{1.83}/(Runs^{1.83} - Runs Allowed^{1.83})$$ I created Pythagorean recrods based on season-to-date and last 5 games. All four inputs (home and visitor runs scored and allowed) as well as the recent and season to date Pythagorean records were independent variables in the model. 
+
+***Log 5***:  
+Log 5 is the probability a team A will defeat team B based on the odds ratio between winning percentages of each team. The following formula calculates this: 
+```math
+(p_A-p_A*p_B)/(p_A+p_B-2*p_A*p_B)
+```
+All six inputs (home and visitor wins, losses, and winning percentages) as well as the recent and season to date Log 5 for the home team were independent variables in the model. 
 
 ### Data Leakage
-In training a model based on games already played, it was important to avoid any data leakage. Season to date and recent totals were calculated using cumsum and roll away formulas, respectively. In so doing, these formulas would include data from that day's games, data not available when making a prediction. As such, I subtracted the data from that day's games from each total.  This resulted in choosing a value of k for recent games one higher than the number of games you want to evaluate (e.g. if you want to look at the last 7 games, the value of k should be 8).
+In training a model based on games already played, it was important to avoid any data leakage. Season to date and recent totals were calculated using *cumsum* and *roll away* formulas, respectively. In so doing, these formulas would include data from that day's games, data not available when making a prediction. As such, I subtracted the data from that day's games from each total.  This resulted in choosing a value of *k* for recent games one higher than the number of games you want to evaluate (e.g. if you want to look at the last 7 games, the value of *k* should be 8).
 
 ### Data Transformation
-Heretofore, each observation in the data was for a team at each point in the season to enable calculations of the required inputs for the model. For the model to function properly, the teams playing against one another needed to be combined into a single observation to produce a single winner.  This required the creation of a unique game ID. The data was then split into home and away teams. A left join was performed based on the unique game ID to create a single observation for each game containing the data for both the home and away teams.  
+Heretofore, each observation in the data was for a team at each point in the season to enable calculations of the required inputs for the model. For the model to function properly, the teams playing against one another needed to be combined into a single observation.  This required the creation and assignment of a unique game ID to each team playing in a single game. The data was split into home and away teams. A left join was performed based on the unique game ID to create a single observation for each game containing the data for both the home and away teams.  
 
 ### Model Creation 
-As noted earlier, the model was trained on 50,000 games and validated on 5,000, an atypical split and potentially allowing for overfitting. Because each baseball game is different, I don't believe overfitting is an issue in this setting. Furthermore, it was important to validate the model on recent seasons rather than a larger number of randomly selected games over the past 22 years.  I want to ensure the model performs well on how the game is played today. I performed cross validation to determine the optimal number of trees to train. After fitting the model, I validated it on 2021-22 games. 
+As noted earlier, the model was trained on 50,000 games and validated on 5,000, an atypical split when seeking to avoid overfitting. Because each baseball game is different, I don't believe overfitting is an issue. Furthermore, it was important to validate the model on recent seasons rather than a larger number of randomly selected games over the past 22 years.  I want to ensure the model performs well on how the game is played today. I performed cross validation to determine the optimal number of trees to train. 
 
 ### Performance 
-When the model is applied to each game, the overall accuracy is 59%. However, when used in a betting context, one does not have to place a bet on every game. The graph below shows the model's accuracy (y-axis) as the probability threhsold for placing a bet increases (x-axis). The line on the secondary axis shows how often the user can expect to have games have a particular threshold.  
+When the model is applied to each game, the overall accuracy is 59%. However, when used in a betting context, one does not have to place a bet on every game. The graph below shows the model's accuracy (y-axis) as the probability threhsold for placing a bet increases (x-axis). The diamonds represent the frequency the user can anticipate seeing predictions at each probability threshold.  
 
 ![Picture1](https://user-images.githubusercontent.com/73828790/225315425-bd40c180-ee44-4a3b-a216-f7dfdfbcd4fc.png)
 
-The accuracy steadily increases as the threshold for predicting a home team win increases.  For example, if a 66% probability is present for either team, accuracy increases by 13 percent.  However, this level of confidence only appears in 17 percent of predictions. 
+Not suprisingly, the accuracy steadily increases as the probability increases.  For example, if a 66% probability is present, accuracy increases by 13 percent.  However, this level of confidence only appears in 17 percent of predictions. 
 
 ### Variable Importance
 
-To quantify the importance of each input, I calculated their Shapley Additive Explanation (SHAP) value. I've also included a SHAP analysis to show which inputs play the biggest role in the prediction. Very simply, the features with the largest value are the most important.
+I calculated Shapley Additive Explanation (SHAP) value to quantify the importance of each input, and included the top 10 in the plot below. Very simply, the features with the largest value are the most important.
 
 <img width="525" alt="000010" src="https://user-images.githubusercontent.com/73828790/225316842-aa66c900-06ca-4ebb-8ba4-ae8b09139fd3.png">
 
 In addition to importance, the above plot shows the effect of high and low values of the feature and noted by the color. For example, high values of losses in the last 5 games (RollingOppLosses) produce a high SHAP value suggesting it is largely responsible for the prediction.
 
 ### Deployment
-To deploy the model, the user needs to execute 3 steps: 
-1. Ingest the most recent game data
-2. Input the visiting and home teams
-3. Input each team's odds (American) of winning
+To deploy the model, the user needs to execute 4 steps: 
+1. Ingest the most recent game data,
+2. Input the visiting and home teams playing one another,
+3. Input each team's odds (American) of winning, and
 4. Run remaining code
 
 #### Ingest data
